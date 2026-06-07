@@ -22,6 +22,7 @@
 .flow-primary:active{transform:scale(.97)}
 .flow-secondary{background:#eef1f5;color:#555;border:none;border-radius:10px;padding:12px 28px;font-size:14px;cursor:pointer}
 @media(max-width:400px){.radio-row .ropt{min-width:60px;padding:8px 10px;font-size:13px}.card{padding:18px 14px;margin:10px 8px}.header h1{font-size:19px}}
+.project-check-grid{display:flex;flex-direction:column;gap:8px;margin:10px 0}.project-check{display:flex;align-items:flex-start;gap:8px;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;background:#fafafa;cursor:pointer;font-size:13px;line-height:1.5;transition:all .15s}.project-check:has(input:checked){border-color:#22c55e;background:#f0fdf4}.project-check input[type=checkbox]{margin-top:2px;accent-color:#22c55e;width:16px;height:16px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -73,19 +74,28 @@ function selectOption(label){var input=label.querySelector('input');if(!input)re
 D.querySelectorAll('.radio-row .ropt').forEach(function(label){label.setAttribute('tabindex','0');label.addEventListener('touchstart',function(e){selectOption(this);e.preventDefault()},{passive:false});label.addEventListener('mousedown',function(e){selectOption(this);e.preventDefault()});label.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){selectOption(this);e.preventDefault()}})});
 
 // Navigation
-window.goBack=function(){D.getElementById('results').classList.remove('show');D.getElementById('qform').style.display='';setTimeout(function(){D.getElementById('qform').scrollIntoView({behavior:'smooth'})},50)};
-window.goPrevStage=function(){var u=new URL(window.location.href);var ret=u.searchParams.get('return')||'';var batch=u.searchParams.get('batch')||'';var issue=u.searchParams.get('issue')||'';if(batch==='1'&&issue){var base=ret||'https://sewen38.github.io/family-plan/';var sep=base.indexOf('?')>=0?'&':'?';window.location.href=base+sep+'batch=1&issue='+issue;}else if(ret){window.location.href=ret;}else{history.back();}};
-window._selectedSolution='';window._selectedProject='';
-window.selectSolution=function(c){document.querySelectorAll('.choice-card').forEach(function(x){x.classList.remove('sel')});var el=document.querySelector('[data-solution="'+c+'"]');if(el)el.classList.add('sel');document.querySelectorAll('.project-list').forEach(function(x){x.classList.remove('show')});var list=document.getElementById('projects-'+c);if(list)list.classList.add('show');window._selectedSolution=c;};
-window.selectProject=function(el,p){document.querySelectorAll('.project-opt').forEach(function(x){x.classList.remove('sel')});el.classList.add('sel');window._selectedProject=p;};
-window.goExecPlan=function(){if(!window._selectedProject){alert('请先选择项目');return;}var u=new URL(window.location.href);var batch=u.searchParams.get('batch')||'';var issue=u.searchParams.get('issue')||'16';if(batch==='1'&&issue){window.location.href='https://sewen38.github.io/family-plan/batch-summary.html?issue='+issue+'&country=NZ';return;}window.location.href=execPageUrl+'?issue='+issue+'&solution='+(window._selectedSolution||'A')+'&project='+window._selectedProject;};
+window.goBack=function(){D.getElementById('results').classList.remove('show');D.getElementById('qform').style.display='';setTimeout(function(){D.getElementById('qform').scrollIntoView({behavior:'smooth'})},50)};window.goPrevStage=function(){
+  var u=new URL(window.location.href);
+  var ret=u.searchParams.get('return')||'';
+  if(ret){window.location.href=ret;return;}
+  window.location.href='https://sewen38.github.io/family-plan/?issue='+(u.searchParams.get('issue')||'');
+};
+window.onProjectCheck=function(){};window.onProjectCheck=function(){};
+window.goExecPlan=function(){
+  var checks=document.querySelectorAll('input[name="selProject"]:checked');
+  if(checks.length===0){alert('请至少选择一个通过评估的项目');return;}
+  var projects=Array.from(checks).map(function(c){return c.value;});
+  var u=new URL(window.location.href);
+  var batch=u.searchParams.get('batch')||'';
+  var issue=u.searchParams.get('issue')||'';
+  if(batch==='1'&&issue){
+    try{var bd=JSON.parse(localStorage.getItem('***')||'{}');bd[issue]=bd[issue]||{};bd[issue]['nz']={projects:projects,ts:Date.now()};localStorage.setItem('***',JSON.stringify(bd));}catch(e){}
+    var retUrl=u.searchParams.get('return')||'https://sewen38.github.io/family-plan/?batch=1&issue='+issue;
+    window.location.href=retUrl;return;
+  }
+  window.location.href='https://sewen38.github.io/nz-assessment/exec.html?issue='+issue+'&projects='+projects.join(',');
+};
 var execPageUrl='https://sewen38.github.io/nz-assessment/exec.html';
-
-window.goPrevStage=function(){var u=new URL(window.location.href);var ret=u.searchParams.get('return')||'';var batch=u.searchParams.get('batch')||'';var issue=u.searchParams.get('issue')||'';if(batch==='1'&&issue){var base=ret||'https://sewen38.github.io/family-plan/';var sep=base.indexOf('?')>=0?'&':'?';window.location.href=base+sep+'batch=1&issue='+issue;}else if(ret){window.location.href=ret}else{history.length>1?history.back():goBack()}};
-window._selectedSolution=null;window._selectedProject=null;
-window.selectSolution=function(code){document.querySelectorAll('.choice-card').forEach(function(x){x.classList.remove('sel')});var el=document.querySelector('[data-solution="'+code+'"]');if(el)el.classList.add('sel');document.querySelectorAll('.project-list').forEach(function(x){x.classList.remove('show')});var list=document.getElementById('projects-'+code);if(list)list.classList.add('show');window._selectedSolution=code;};
-window.selectProject=function(el,project){document.querySelectorAll('.project-opt').forEach(function(x){x.classList.remove('sel')});el.classList.add('sel');window._selectedProject=project;};
-window.goExecPlan=function(){if(!window._selectedSolution){alert('请先选择一个可执行/可选方案');return}if(!window._selectedProject){alert('请先选择具体项目');return}var u=new URL(window.location.href);var batch=u.searchParams.get('batch')||'';var issue=u.searchParams.get('issue')||'';if(batch==='1'&&issue){window.location.href='https://sewen38.github.io/family-plan/batch-summary.html?issue='+issue+'&country=NZ';return}var params=new URLSearchParams({issue:issue,country:'nz',solution:window._selectedSolution,project:window._selectedProject,stage:'exec'});window.location.href='https://sewen38.github.io/nz-assessment/exec.html?'+params.toString()};
 
 function smcPoints(edu,registration,wage,nzExp){var core=0,coreLabel='';if(registration&&registration!=='none'){core=parseInt(registration,10);coreLabel='职业注册 '+core+'分'}else if(edu==='doctor'){core=6;coreLabel='博士学历 6分'}else if(edu==='master'){core=5;coreLabel='硕士学历 5分'}else if(edu==='bachelor'){core=4;coreLabel='本科/荣誉学位 4分'}else if(wage==='gte105'){core=6;coreLabel='三倍高薪路径 6分'}else if(wage==='gte70'){core=6;coreLabel='双倍高薪路径 6分'}else if(wage==='gte52'){core=4;coreLabel='约1.5倍中位数工资 4分'}else if(wage==='35-52'){core=3;coreLabel='中位数工资以上 3分'}var exp={0:0,1:1,2:2,'3+':3}[nzExp]||0;var total=Math.min(6,core+exp);return {core:core,exp:exp,total:total,label:coreLabel||'核心技能分不足'}}
 window.submitForm=function(){var age=S('age'),nat=S('nationality'),nocrim=R('nocrim'),health=R('health'),investBudget=S('invest_budget'),investType=S('invest_type'),fundsource=R('fundsource'),edu=S('education'),english=S('english'),nzOffer=R('nz_offer'),jobType=S('job_type'),greenSector=S('green_sector'),wage=S('wage'),nzWork24=R('nz_work_24'),reg=S('registration'),nzExp=S('nz_exp'),ictPossible=R('ict_possible'),ictRole=S('ict_role'),ictAccredited=R('ict_accredited'),partner=R('partner_nz'),family=R('family'),urgency=S('urgency'),purposes=CB('purpose');var miss=[];if(!age)miss.push('年龄');if(!nat)miss.push('国籍');if(!nocrim)miss.push('犯罪记录');if(!health)miss.push('健康证明');if(!investBudget)miss.push('投资预算');if(!investType)miss.push('投资类型');if(!fundsource)miss.push('资金来源');if(!edu)miss.push('学历');if(!english)miss.push('英语');if(!nzOffer)miss.push('新西兰offer');if(!jobType)miss.push('职位类型');if(!greenSector)miss.push('绿名单/行业');if(!wage)miss.push('工资');if(!nzWork24)miss.push('24个月工作');if(!reg)miss.push('职业注册');if(!nzExp)miss.push('新西兰经验');if(!ictPossible)miss.push('派遣/ICT可能性');if(!ictRole)miss.push('派遣角色');if(!ictAccredited)miss.push('接收方认证雇主');if(!partner)miss.push('配偶路径');if(!family)miss.push('家属随行');if(!urgency)miss.push('紧迫度');if(miss.length){alert('请完成：\n'+miss.join('、'));return}var w=D.getElementById('results');D.getElementById('qform').style.display='none';w.innerHTML='<div class="rs-card" style="text-align:center;padding:50px 20px"><div style="font-size:40px">📤</div><h3>已提交</h3><p style="color:#888;font-size:13px;margin:6px 0"><span class="spinner"></span>正在分析评估...</p></div>';w.classList.add('show');w.scrollIntoView({behavior:'smooth'});setTimeout(function(){showResults({age,nat,nocrim,health,investBudget,investType,fundsource,edu,english,nzOffer,jobType,greenSector,wage,nzWork24,reg,nzExp,ictPossible,ictRole,ictAccredited,partner,family,urgency,purposes})},1200)};
@@ -106,15 +116,20 @@ h+='<div class="hb w">⚠️ 本评估由AI基于问卷自动生成，仅供初�
 
 // === SOLUTION / PROJECT SELECTION ===
 h+='<div class="rs-card"><h3 style="font-size:16px;margin-bottom:12px;color:#0b3d2e">✅ 请选择下一阶段执行方案</h3>';
-h+='<div class="choice-grid">';
-h+='<div class="choice-card" data-solution="A" onclick="selectSolution(\'A\')"><h4>方案A：Green List直通 + SMC 6分技术移民</h4><p>适合有技能、在绿名单或可获认证雇主offer的客户。Tier 1直通居留或SMC评分制，一步Resident Visa。</p></div>';
-h+='<div class="choice-card" data-solution="B" onclick="selectSolution(\'B\')"><h4>方案B：Active Investor Plus 投资移民</h4><p>适合高净值客户。NZD 500万起投，36/60个月投资期，无英语要求，获得Resident Visa。</p></div>';
-h+='<div class="choice-card" data-solution="C" onclick="selectSolution(\'C\')"><h4>方案C：ICT/派遣落地 + 配偶/AEWV组合</h4><p>适合有跨国企业资源或新西兰配偶的客户。先通过工签/派遣登陆，再转为SMC/Green List居留路径。</p></div>';
-h+='</div>';
-h+='<div id="projects-A" class="project-list"><div class="stage-hint">请选择项目：</div><div class="project-opt" onclick="selectProject(this,\'nz-green-tier1\')">Green List Tier 1 直通居留 · 一步Resident Visa</div><div class="project-opt" onclick="selectProject(this,\'nz-smc-6pt\')">SMC 6分制技术移民 · 评分制 · Resident Visa</div><div class="project-opt" onclick="selectProject(this,\'nz-green-smc-combo\')">Green List + SMC 双轨规划</div></div>';
-h+='<div id="projects-B" class="project-list"><div class="stage-hint">请选择项目：</div><div class="project-opt" onclick="selectProject(this,\'nz-aip-growth\')">AIP Growth · NZD 500万起 · 36个月 · 增长型投资</div><div class="project-opt" onclick="selectProject(this,\'nz-aip-balanced\')">AIP Balanced · NZD 1000万起 · 60个月 · 均衡型投资</div><div class="project-opt" onclick="selectProject(this,\'nz-aip-edu\')">AIP投资移民 + 子女教育/全家规划</div></div>';
-h+='<div id="projects-C" class="project-list"><div class="stage-hint">请选择项目：</div><div class="project-opt" onclick="selectProject(this,\'nz-ict-aewv\')">ICT/派遣 AEWV 工签落地 · 后续转SMC/Green List</div><div class="project-opt" onclick="selectProject(this,\'nz-partner-residence\')">配偶/家庭居留路径 · 工签→Resident Visa</div><div class="project-opt" onclick="selectProject(this,\'nz-ict-partner-combo\')">派遣+配偶/家庭 组合评估</div></div>';
-h+='<div class="flow-actions"><button class="flow-secondary" onclick="goPrevStage()">返回上一阶段</button><button class="flow-secondary" onclick="goBack()">返回修改问卷</button><button class="flow-primary" onclick="goExecPlan()">下一阶段</button></div>';
+    h+='<div class="rs-card"><h3 style="font-size:16px;margin-bottom:12px;color:#8b1e1e">✅ 通过评估的项目（可多选）</h3>';
+    h+='<div class="project-check-grid">';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-green-tier1" onchange="onProjectCheck()"> Green List Tier 1 直通居留 · 一步Resident Visa</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-smc-6pt" onchange="onProjectCheck()"> SMC 6分制技术移民 · 评分制 · Resident Visa</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-green-smc-combo" onchange="onProjectCheck()"> Green List + SMC 双轨规划</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-aip-growth" onchange="onProjectCheck()"> AIP Growth · NZD 500万起 · 36个月 · 增长型投资</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-aip-balanced" onchange="onProjectCheck()"> AIP Balanced · NZD 1000万起 · 60个月 · 均衡型投资</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-aip-edu" onchange="onProjectCheck()"> AIP投资移民 + 子女教育/全家规划</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-ict-aewv" onchange="onProjectCheck()"> ICT/派遣 AEWV 工签落地 · 后续转SMC/Green List</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-partner-residence" onchange="onProjectCheck()"> 配偶/家庭居留路径 · 工签→Resident Visa</label>';
+    h+='<label class="project-check"><input type="checkbox" name="selProject" value="nz-ict-partner-combo" onchange="onProjectCheck()"> 派遣+配偶/家庭 组合评估</label>';
+    h+='</div>';
+    h+='<div class="flow-actions"><button class="flow-secondary" onclick="goPrevStage()">返回上一阶段</button><button class="flow-secondary" onclick="goBack()">返回修改问卷</button><button class="flow-primary" onclick="goExecPlan()">下一阶段</button></div>';
+    h+='</div>';
 h+='</div>';
 
 D.getElementById('results').innerHTML=h}
